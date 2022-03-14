@@ -220,7 +220,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 				append(sc);
 			}
 								
-			setTimeout(function() {window.dispatchEvent(new CustomEvent('foe-helper#loaded'))}, 1000);
+			setTimeout(function() {window.dispatchEvent(new CustomEvent('foe-helper#loaded'))}, 2000);
 
 			localStorage.setItem('LoadBeta', JSON.stringify(loadBeta));
 		} catch (err) {
