@@ -14,19 +14,25 @@
 // separate code from global scope
 {
 let ScArray=[];
-//const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
-//localStorage.setItem('LoadBeta', 'false');
-//if (loadBeta) {
-//	let now = new Date();
-//	fetch("https://api.github.com/repos/mainIine/foe-helfer-extension/branches/beta?" + now)
-//		.then(response => {if (response.status === 200) {response.json()
-//		.then((data) => {inject(true,
-//								'https://cdn.jsdelivr.net/gh/mainIine/foe-helfer-extension@' + (data?.commit?.sha || 'beta') + '/', 
-//								(data?.commit?.commit?.committer?.date || ""
-//						))})}});
-//} else {
-	inject();
-//}
+const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
+localStorage.setItem('LoadBeta', 'false');
+if (loadBeta) {
+	let now = new Date();
+	fetch("https://api.github.com/repos/mainIine/foe-helfer-extension/branches/beta?" + now)
+		.then(response => {if (response.status === 200) {response.json()
+		.then((data) => {inject(true,
+								'https://cdn.jsdelivr.net/gh/mainIine/foe-helfer-extension@' + (data?.commit?.sha || 'beta') + '/', 
+								(data?.commit?.commit?.committer?.date || ""
+						))})}});
+} else {
+	let now = new Date();
+	fetch("https://api.github.com/repos/mainIine/foe-helfer-extension/branches/master?" + now)
+		.then(response => {if (response.status === 200) {response.json()
+		.then((data) => {inject(false,
+								'https://cdn.jsdelivr.net/gh/mainIine/foe-helfer-extension@' + (data?.commit?.sha || 'beta') + '/', 
+								""
+						)})}});
+}
 
 function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDate='') {
 	/**
@@ -213,8 +219,8 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 			for (let sc of ScArray) {
 				append(sc);
 			}
-					
-			window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
+								
+			setTimeout(function() {window.dispatchEvent(new CustomEvent('foe-helper#loaded'))}, 1000);
 
 			localStorage.setItem('LoadBeta', JSON.stringify(loadBeta));
 		} catch (err) {
