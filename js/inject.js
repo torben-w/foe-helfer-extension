@@ -40,6 +40,18 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 	 * @param {string} src the URL to load
 	 * @returns {Promise<void>}
 	 */
+	 if (loadBeta) {
+		let BetaBreak = document.createElement('div');
+		BetaBreak.id="StopBeta";
+		BetaBreak.innerHTML="Deactivate<br>Beta"
+		BetaBreak.onclick = function() {
+			localStorage.setItem('LoadBeta', JSON.stringify(false));
+			location.reload();
+		};
+		BetaBreak.style = 'position: absolute;right: 0px;bottom: 0px;z-index: 10;z-index: 100;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size: 0.8rem;font-weight: 400;color: #f3D6A0;background-color: rgb(0 0 0 / 77%);border: 1px solid rgb(187 89 34);border-radius: 4px;';
+		document.body.appendChild(BetaBreak);
+	}
+
 	function promisedLoadCode(src, append=true) {
 		return new Promise(async (resolve, reject) => {
 			let sc = document.createElement('script');
