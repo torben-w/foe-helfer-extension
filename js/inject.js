@@ -172,6 +172,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 					extUrl='${extUrl}',
 					GuiLng='${lng}',
 					extVersion='${v}',
+					isRelease=false,
 					devMode=${!('update_url' in chrome.runtime.getManifest())},
 					loadBeta=${loadBeta};
 			`;
