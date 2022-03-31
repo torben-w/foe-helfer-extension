@@ -18,7 +18,8 @@ let scripts = {
 	internal: ["once", "primed"]
 };
 	
-window.addEventListener('foe-helper#scriptloaded', () => {
+function scriptLoaded (src, base) {
+	scripts[base].splice(scripts[base].indexOf(src),1);
 	if (scripts.internal.length == 1) {
 		scripts.internal.splice(scripts.internal.indexOf("once"),1);
 		window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
@@ -27,10 +28,10 @@ window.addEventListener('foe-helper#scriptloaded', () => {
 		scripts.vendor.splice(scripts.vendor.indexOf("once"),1);
 		window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
 	}
-}, { capture: false, once: false, passive: true });
+};
 
 const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
-//localStorage.setItem('LoadBeta', 'false');
+
 if (loadBeta) {
 	let now = new Date();
 	fetch("https://api.github.com/repos/mainIine/foe-helfer-extension/branches/beta?" + now)
@@ -81,10 +82,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 				scripts[base].push(src);
 			}
 			sc.addEventListener('load', function() {
-				if (scripts[base]) {
-					scripts[base].splice(scripts[base].indexOf(src),1);
-					window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
-				}
+				if (scripts[base]) scriptLoaded(src, base);
 				this.remove();
 				resolve();
 			});
@@ -235,9 +233,8 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 			const vendorScriptsToLoad = await vendorListPromise;
 			await Promise.all(vendorScriptsToLoad.map(vendorScript => promisedLoadCode(`${extUrl}vendor/${vendorScript}.js?v=${v}`, "vendor")));
 			
-			scripts.vendor.splice(scripts.vendor.indexOf("primed"),1); //"window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
-			window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
-
+			scriptLoaded("primed", "vendor");
+			
 			// load scripts (one after the other)
 			const internalScriptsToLoad = await scriptListPromise;
 
@@ -245,10 +242,8 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 				await promisedLoadCode(`${extUrl}js/web/${internalScriptsToLoad[i]}/js/${internalScriptsToLoad[i]}.js?v=${v}`, "internal");
 			}
 		
-			scripts.internal.splice(scripts.internal.indexOf("primed"),1);
-			window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
-
-			//localStorage.setItem('LoadBeta', JSON.stringify(loadBeta));
+			scriptLoaded("primed", "internal");
+			
 		} catch (err) {
 			// make sure that the packet buffer in the FoEproxy does not fill up in the event of an incomplete loading.
 			window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
