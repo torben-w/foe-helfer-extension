@@ -41,6 +41,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 	 * @returns {Promise<void>}
 	 */
 	 if (loadBeta) {
+		let x = new Promise(async (resolve, reject) => {
 		let BetaBreak = document.createElement('div');
 		BetaBreak.id="StopBeta";
 		BetaBreak.innerHTML="Deactivate<br>Beta"
@@ -49,7 +50,11 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 			location.reload();
 		};
 		BetaBreak.style = 'position: absolute;right: 0px;bottom: 0px;z-index: 10;z-index: 100;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size: 0.8rem;font-weight: 400;color: #f3D6A0;background-color: rgb(0 0 0 / 77%);border: 1px solid rgb(187 89 34);border-radius: 4px;';
-		document.body.appendChild(BetaBreak);
+		
+		while (!document.body) await new Promise((resolve) => {
+			requestIdleCallback(resolve);
+		});
+		document.body.appendChild(BetaBreak);})
 	}
 
 	function promisedLoadCode(src, append=true) {
@@ -235,7 +240,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 				append(sc);
 			}
 								
-			window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
+			setTimeout(window.dispatchEvent(new CustomEvent('foe-helper#loaded')),2000);
 
 			//localStorage.setItem('LoadBeta', JSON.stringify(loadBeta));
 		} catch (err) {
