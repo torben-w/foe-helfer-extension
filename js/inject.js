@@ -13,7 +13,22 @@
 
 // separate code from global scope
 {
-let ScArray=[];
+let scripts = {
+	vendor: ["once", "primed"],
+	internal: ["once", "primed"]
+};
+	
+window.addEventListener('foe-helper#scriptloaded', () => {
+	if (scripts.internal.length == 1) {
+		scripts.internal.splice(scripts.internal.indexOf("once"),1);
+		window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
+	}
+	if (scripts.vendor.length == 1) {
+		scripts.vendor.splice(scripts.vendor.indexOf("once"),1);
+		window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
+	}
+}, { capture: false, once: false, passive: true });
+
 const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
 //localStorage.setItem('LoadBeta', 'false');
 if (loadBeta) {
@@ -40,6 +55,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 	 * @param {string} src the URL to load
 	 * @returns {Promise<void>}
 	 */
+
 	 if (loadBeta) {
 		let x = new Promise(async (resolve, reject) => {
 		let BetaBreak = document.createElement('div');
@@ -57,12 +73,18 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 		document.body.appendChild(BetaBreak);})
 	}
 
-	function promisedLoadCode(src, append=true) {
+	function promisedLoadCode(src, base="base") {
 		return new Promise(async (resolve, reject) => {
 			let sc = document.createElement('script');
 			sc.src = src;
-
+			if (scripts[base]) {
+				scripts[base].push(src);
+			}
 			sc.addEventListener('load', function() {
+				if (scripts[base]) {
+					scripts[base].splice(scripts[base].indexOf(src),1);
+					window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
+				}
 				this.remove();
 				resolve();
 			});
@@ -71,22 +93,6 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 				this.remove();
 				reject();
 			});
-
-			if (append) {
-				while (!document.head && !document.documentElement) await new Promise((resolve) => {
-					// @ts-ignore
-					requestIdleCallback(resolve);
-				});
-				(document.head || document.documentElement).appendChild(sc);
-			} else {
-				ScArray.push(sc);
-				resolve();
-			}
-		});
-	}
-	
-	async function append(sc) {
-		return await new Promise(async () => {
 			while (!document.head && !document.documentElement) await new Promise((resolve) => {
 				// @ts-ignore
 				requestIdleCallback(resolve);
@@ -227,20 +233,20 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 
 			// load all vendor scripts first (unknown order)
 			const vendorScriptsToLoad = await vendorListPromise;
-			await Promise.all(vendorScriptsToLoad.map(vendorScript => promisedLoadCode(`${extUrl}vendor/${vendorScript}.js?v=${v}`)));
-			window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
+			await Promise.all(vendorScriptsToLoad.map(vendorScript => promisedLoadCode(`${extUrl}vendor/${vendorScript}.js?v=${v}`, "vendor")));
+			
+			scripts.vendor.splice(scripts.vendor.indexOf("primed"),1); //"window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
+			window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
 
 			// load scripts (one after the other)
 			const internalScriptsToLoad = await scriptListPromise;
 
 			for (let i = 0; i < internalScriptsToLoad.length; i++){
-				await promisedLoadCode(`${extUrl}js/web/${internalScriptsToLoad[i]}/js/${internalScriptsToLoad[i]}.js?v=${v}`, false);
+				await promisedLoadCode(`${extUrl}js/web/${internalScriptsToLoad[i]}/js/${internalScriptsToLoad[i]}.js?v=${v}`, "internal");
 			}
-			for (let sc of ScArray) {
-				append(sc);
-			}
-								
-			setTimeout(window.dispatchEvent(new CustomEvent('foe-helper#loaded')),2000);
+		
+			scripts.internal.splice(scripts.internal.indexOf("primed"),1);
+			window.dispatchEvent(new CustomEvent('foe-helper#scriptloaded'));
 
 			//localStorage.setItem('LoadBeta', JSON.stringify(loadBeta));
 		} catch (err) {
