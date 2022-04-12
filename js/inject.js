@@ -31,6 +31,7 @@ function scriptLoaded (src, base) {
 };
 
 const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
+localStorage.setItem('LoadBeta', loadBeta);
 
 if (loadBeta) {
 	let now = new Date();
