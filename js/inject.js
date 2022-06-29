@@ -14,33 +14,35 @@
 // separate code from global scope
 {
 let scripts = {
-	main: ["once"],
-	proxy: ["once"],
+	main: ["once", "primed"],
+	proxy: ["once", "primed"],
 	vendor: ["once", "primed"],
 	internal: ["once", "primed"]
 };
 	
 function scriptLoaded (src, base) {
 	scripts[base].splice(scripts[base].indexOf(src),1);
-	if (scripts.internal.length == 1) {
-		scripts.internal.splice(scripts.internal.indexOf("once"),1);
-		window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
-	}
-	if (scripts.main.length == 1) {
-		scripts.main.splice(scripts.main.indexOf("once"),1);
-		window.dispatchEvent(new CustomEvent('foe-helper#mainloaded'));
-	}
-	if (scripts.proxy.length == 1) {
-		scripts.proxy.splice(scripts.proxy.indexOf("once"),1);
-		window.dispatchEvent(new CustomEvent('foe-helper#proxyloaded'));
-	}
+	//console.log(`${base}: ${src}`)
+	//if (scripts.main.length == 1) {
+	//	scripts.main.splice(scripts.main.indexOf("once"),1);
+//		window.dispatchEvent(new CustomEvent('foe-helper#mainloaded'));
+//	}
+//	if (scripts.proxy.length == 1) {
+//		scripts.proxy.splice(scripts.proxy.indexOf("once"),1);
+//		window.dispatchEvent(new CustomEvent('foe-helper#proxyloaded'));
+//		
+//	}
 	if (scripts.vendor.length == 1) {
 		scripts.vendor.splice(scripts.vendor.indexOf("once"),1);
 		window.dispatchEvent(new CustomEvent('foe-helper#vendors-loaded'));
 	}
+	if (scripts.internal.length == 1) {
+		scripts.internal.splice(scripts.internal.indexOf("once"),1);
+		window.dispatchEvent(new CustomEvent('foe-helper#loaded'));
+	}
 };
 
-const loadBeta = JSON.parse(localStorage.getItem('LoadBeta')) || false;
+const loadBeta = JSON.parse(localStorage.getItem('LoadBeta') || "true");
 localStorage.setItem('LoadBeta', loadBeta);
 
 if (loadBeta) {
@@ -67,14 +69,14 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 	 * @param {string} src the URL to load
 	 * @returns {Promise<void>}
 	 */
-
+	//add button to load release version instead of beta version from git
 	 if (loadBeta) {
 		let x = new Promise(async (resolve, reject) => {
 		let BetaBreak = document.createElement('div');
 		BetaBreak.id="StopBeta";
 		BetaBreak.innerHTML="Deactivate<br>Beta"
 		BetaBreak.onclick = function() {
-			localStorage.setItem('LoadBeta', JSON.stringify(false));
+			localStorage.setItem('LoadBeta', false);
 			location.reload();
 		};
 		BetaBreak.style = 'position: absolute;right: 0px;bottom: 0px;z-index: 10;z-index: 100;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size: 0.8rem;font-weight: 400;color: #f3D6A0;background-color: rgb(0 0 0 / 77%);border: 1px solid rgb(187 89 34);border-radius: 4px;';
@@ -159,6 +161,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 		localStorage.setItem('user-language', lng);
 	}
 
+		   
 	InjectCode(loadBeta, extUrl);
 
 
@@ -194,7 +197,7 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 	}
 
 	async function InjectCode(loadBeta, extUrl) {
-	 	try {
+		try {
 			// set some global variables
 			let script = document.createElement('script');
 			script.innerText = `
@@ -209,56 +212,33 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 			(document.head || document.documentElement).appendChild(script);
 			// The script was (supposedly) executed directly and can be removed again.
 			script.remove();
-			// Firefox does not support direct communication with background.js but API injections
-			// So the the messages have to be forwarded and this exports an API-Function to do so
-			if (!chrome.app && exportFunction && window.wrappedJSObject) {
-				function callBgApi(data) {
-					return new window.Promise(
-						exportFunction(
-							function (resolve, reject) {
-								if (typeof data !== 'object' || typeof data.type !== 'string') {
-									reject('invalid request, data has to be of sceme: {type: string, ...}');
-									return;
-								}
-								// Note: the message is packed, so background.js knows it is an external message, even though it is sent by inject.js
-								browser.runtime.sendMessage(chrome.runtime.id, {type: 'packed', data: data})
-									.then(
-										data => {
-											resolve(cloneInto(data, window));
-										},
-										error => {
-											console.error('FoeHelper BgAPI error', error);
-											reject("An error occurred while sending the message to the extension");
-										}
-									);
-							}
-							, window
-						)
-					);
-				}
-				exportFunction(callBgApi, window, {defineAs: 'foeHelperBgApiHandler'});
-			}
+			
+			// load foe-Proxy
+			await promisedLoadCode(chrome.extension.getURL('')+`js/foeproxy.js`,'proxy');
+			//scriptLoaded("primed", "proxy");
+			//await proxyLoaded;
+
+			// load the main
+			await promisedLoadCode(`${extUrl}js/web/_main/js/_main.js`,'main');
+			//scriptLoaded("primed", "main");
+			//await mainLoaded;
+
+			// wait for ant and i18n to be loaded
+			await jQueryLoading;
+
 			// start loading both script-lists
 			const vendorListPromise = loadJsonResource(`${extUrl}js/vendor.json`);
 			const scriptListPromise = loadJsonResource(`${extUrl}js/internal.json`);
 
-			// load foe-Proxy
-			await promisedLoadCode(chrome.extension.getURL('')+`js/foeproxy.js`,'proxy');
-			await proxyLoaded;
-			// load the main
-			await promisedLoadCode(`${extUrl}js/web/_main/js/_main.js`,'main');
-			await mainLoaded;
-			
-			// wait for ant and i18n to be loaded
-			await jQueryLoading;
-
-			// load all vendor scripts first (unknown order)
+			// load all vendor scripts first
 			const vendorScriptsToLoad = await vendorListPromise;
-			await Promise.all(vendorScriptsToLoad.map(vendorScript => promisedLoadCode(`${extUrl}vendor/${vendorScript}.js?v=${v}`, "vendor")));
+			for (let i = 0; i < vendorScriptsToLoad.length; i++){
+				await promisedLoadCode(`${extUrl}vendor/${vendorScriptsToLoad[i]}.js?v=${v}`, "vendor");
+			}
 			
 			scriptLoaded("primed", "vendor");
 			
-			// load scripts (one after the other)
+			// load scripts
 			const internalScriptsToLoad = await scriptListPromise;
 
 			for (let i = 0; i < internalScriptsToLoad.length; i++){
@@ -266,12 +246,12 @@ function inject (loadBeta = false, extUrl = chrome.extension.getURL(''), betaDat
 			}
 		
 			scriptLoaded("primed", "internal");
-			
-		} catch (err) {
-			// make sure that the packet buffer in the FoEproxy does not fill up in the event of an incomplete loading.
-			window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
-		}
-	}
+		   
+	   } catch (err) {
+		   // make sure that the packet buffer in the FoEproxy does not fill up in the event of an incomplete loading.
+		   window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
+	   }
+   }
 
 }
 	// End of the separation from the global scope
