@@ -382,7 +382,7 @@ const FoEproxy = (function () {
 	 */
 	function xhrOnLoadHandler() {
 		if (!proxyEnabled) return;
-
+		//if (this.responseURL.indexOf("json?h") > 0) console.log(this);
 		if (xhrQueue) {
 			xhrQueue.push(this);
 			return;
