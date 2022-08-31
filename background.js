@@ -11,6 +11,12 @@
  * **************************************************************************************
  */
 
+'use strict';
+
+importScripts(
+	'vendor/browser-polyfill/browser-polyfill.min.js','vendor/dexie/dexie.min.js'
+)
+
 // @ts-ignore
 let alertsDB = new Dexie("Alerts");
 // Define Database Schema
