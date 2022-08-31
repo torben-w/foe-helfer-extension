@@ -200,7 +200,7 @@
 					devMode: `${!('update_url' in chrome.runtime.getManifest())}`,
 					loadBeta: loadBeta
 				}));
-
+/**
 				// Firefox does not support direct communication with background.js but API injections
 				// So the the messages have to be forwarded and this exports an API-Function to do so
 				if (!chrome.app && exportFunction && window.wrappedJSObject) {
@@ -230,7 +230,7 @@
 					}
 					exportFunction(callBgApi, window, {defineAs: 'foeHelperBgApiHandler'});
 				}
- 
+*/ 
 				// start loading both script-lists
 				const vendorListPromise = loadJsonResource(`${extUrl}js/vendor.json`);
 				const scriptListPromise = loadJsonResource(`${extUrl}js/internal.json`);
