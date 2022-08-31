@@ -191,20 +191,15 @@
 		async function InjectCode(loadBeta, extUrl) {
 			try {
 				// set some global variables
-				let script = document.createElement('script');
-				script.innerText = `
-					const extID='${chrome.runtime.id}',
-						extUrl='${extUrl}',
-						GuiLng='${lng}',
-						extVersion='${v}',
-						isRelease=true,
-						devMode=${!('update_url' in chrome.runtime.getManifest())},
-						loadBeta=${loadBeta};
-				`;
-				document.head.appendChild(script);
-
-				// The script was (supposedly) executed directly and can be removed again.
-				script.remove();
+				localStorage.setItem("HelperBaseData", JSON.stringify({
+					extID: chrome.runtime.id,
+					extUrl: extUrl,
+					GuiLng: lng,
+					extVersion: v,
+					isRelease: true,
+					devMode: `${!('update_url' in chrome.runtime.getManifest())}`,
+					loadBeta: loadBeta
+				}));
 
 				// Firefox does not support direct communication with background.js but API injections
 				// So the the messages have to be forwarded and this exports an API-Function to do so
@@ -235,7 +230,7 @@
 					}
 					exportFunction(callBgApi, window, {defineAs: 'foeHelperBgApiHandler'});
 				}
-
+ 
 				// start loading both script-lists
 				const vendorListPromise = loadJsonResource(`${extUrl}js/vendor.json`);
 				const scriptListPromise = loadJsonResource(`${extUrl}js/internal.json`);
