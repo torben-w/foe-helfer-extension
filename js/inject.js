@@ -189,7 +189,7 @@
 		 * @constructor
 		 */
 		async function InjectCode(loadBeta, extUrl) {
-			try {
+			//try {
 				// set some global variables
 				localStorage.setItem("HelperBaseData", JSON.stringify({
 					extID: chrome.runtime.id,
@@ -200,37 +200,39 @@
 					devMode: `${!('update_url' in chrome.runtime.getManifest())}`,
 					loadBeta: loadBeta
 				}));
-/**
+
 				// Firefox does not support direct communication with background.js but API injections
 				// So the the messages have to be forwarded and this exports an API-Function to do so
-				if (!chrome.app && exportFunction && window.wrappedJSObject) {
-					function callBgApi(data) {
-						return new window.Promise(
-							exportFunction(
-								function (resolve, reject) {
-									if (typeof data !== 'object' || typeof data.type !== 'string') {
-										reject('invalid request, data has to be of sceme: {type: string, ...}');
-										return;
+				if (!chrome.extension) {
+					if (exportFunction && window.wrappedJSObject) {
+						function callBgApi(data) {
+							return new window.Promise(
+								exportFunction(
+									function (resolve, reject) {
+										if (typeof data !== 'object' || typeof data.type !== 'string') {
+											reject('invalid request, data has to be of sceme: {type: string, ...}');
+											return;
+										}
+										// Note: the message is packed, so background.js knows it is an external message, even though it is sent by inject.js
+										browser.runtime.sendMessage(chrome.runtime.id, {type: 'packed', data: data})
+											.then(
+												data => {
+													resolve(cloneInto(data, window));
+												},
+												error => {
+													console.error('FoeHelper BgAPI error', error);
+													reject("An error occurred while sending the message to the extension");
+												}
+											);
 									}
-									// Note: the message is packed, so background.js knows it is an external message, even though it is sent by inject.js
-									browser.runtime.sendMessage(chrome.runtime.id, {type: 'packed', data: data})
-										.then(
-											data => {
-												resolve(cloneInto(data, window));
-											},
-											error => {
-												console.error('FoeHelper BgAPI error', error);
-												reject("An error occurred while sending the message to the extension");
-											}
-										);
-								}
-								, window
-							)
-						);
+									, window
+								)
+							);
+						}
+						exportFunction(callBgApi, window, {defineAs: 'foeHelperBgApiHandler'});
 					}
-					exportFunction(callBgApi, window, {defineAs: 'foeHelperBgApiHandler'});
 				}
-*/ 
+ 
 				// start loading both script-lists
 				const vendorListPromise = loadJsonResource(`${extUrl}js/vendor.json`);
 				const scriptListPromise = loadJsonResource(`${extUrl}js/internal.json`);
@@ -264,10 +266,10 @@
 
 				scriptLoaded("primed", "internal");
 
-			} catch (err) {
+			//} catch (err) {
 				// make sure that the packet buffer in the FoEproxy does not fill up in the event of an incomplete loading.
-				window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
-			}
+			//	window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
+			//}
 		}
 
 	}
