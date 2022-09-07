@@ -631,28 +631,30 @@ alertsDB.version(1).stores({
 			}
 
 			case 'setInnoCDN': { // type
-				localStorage.setItem('InnoCDN', request.url);
+				let InnoCDN = request.url;
+				await browser.storage.local.set({InnoCDN});
 				return APIsuccess(true);
 			}
 
 			case 'getInnoCDN': { // type
-				let cdnUrl = localStorage.getItem('InnoCDN');
+				let cdnUrl = browser.storage.local.get('InnoCDN');
 				return APIsuccess([cdnUrl || defaultInnoCDN, cdnUrl != null]);
 			}
 
 			case 'setPlayerData': { // type
 				const data = request.data;
 
-				const playerdata = JSON.parse(localStorage.getItem('PlayerIdentities') || '{}');
-				playerdata[data.world+'-'+data.player_id] = data;
-				localStorage.setItem('PlayerIdentities', JSON.stringify(playerdata));
+				let PlayerIdentities = browser.storage.local.get('PlayerIdentities');
+				if (!PlayerIdentities) PlayerIdentities = {};
+				PlayerIdentities[data.world+'-'+data.player_id] = data;
+				await browser.storage.local.set({PlayerIdentities});
 
 				return APIsuccess(true);
 			}
 
 			case 'getPlayerData': { // type
-				const playerdata = JSON.parse(localStorage.getItem('PlayerIdentities') || '{}');
-				return APIsuccess(playerdata[request.world+'-'+request.player_id]);
+				let PlayerIdentities = browser.storage.local.get('PlayerIdentities');
+				return APIsuccess(PlayerIdentities[request.world+'-'+request.player_id]);
 			}
 
 			case 'showNotification': { // type
