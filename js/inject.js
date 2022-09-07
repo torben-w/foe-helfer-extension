@@ -189,7 +189,7 @@
 		 * @constructor
 		 */
 		async function InjectCode(loadBeta, extUrl) {
-			//try {
+			try {
 				// set some global variables
 				localStorage.setItem("HelperBaseData", JSON.stringify({
 					extID: chrome.runtime.id,
@@ -266,10 +266,10 @@
 
 				scriptLoaded("primed", "internal");
 
-			//} catch (err) {
+			} catch (err) {
 				// make sure that the packet buffer in the FoEproxy does not fill up in the event of an incomplete loading.
 			//	window.dispatchEvent(new CustomEvent('foe-helper#error-loading'));
-			//}
+			}
 		}
 
 	}
