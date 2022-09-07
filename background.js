@@ -630,33 +630,6 @@ alertsDB.version(1).stores({
 				return APIsuccess(true);
 			}
 
-			case 'setInnoCDN': { // type
-				let InnoCDN = request.url;
-				await browser.storage.local.set({InnoCDN});
-				return APIsuccess(true);
-			}
-
-			case 'getInnoCDN': { // type
-				let cdnUrl = browser.storage.local.get('InnoCDN');
-				return APIsuccess([cdnUrl || defaultInnoCDN, cdnUrl != null]);
-			}
-
-			case 'setPlayerData': { // type
-				const data = request.data;
-
-				let PlayerIdentities = browser.storage.local.get('PlayerIdentities');
-				if (!PlayerIdentities) PlayerIdentities = {};
-				PlayerIdentities[data.world+'-'+data.player_id] = data;
-				await browser.storage.local.set({PlayerIdentities});
-
-				return APIsuccess(true);
-			}
-
-			case 'getPlayerData': { // type
-				let PlayerIdentities = browser.storage.local.get('PlayerIdentities');
-				return APIsuccess(PlayerIdentities[request.world+'-'+request.player_id]);
-			}
-
 			case 'showNotification': { // type
 				try {
 					const title = request.title;
