@@ -157,7 +157,7 @@ if (loadBeta) {
 	fetch("https://api.github.com/repos/mainIine/foe-helfer-extension/branches/master?" + now)
 		.then(response => {if (response.status === 200) {response.json()
 		.then((data) => {InjectCode(false,
-								'https://cdn.jsdelivr.net/gh/mainIine/foe-helfer-extension@' + (data?.commit?.sha || 'beta') + '/', 
+								'https://cdn.jsdelivr.net/gh/mainIine/foe-helfer-extension@' + (data?.commit?.sha || 'master') + '/', 
 								chrome.runtime.getManifest().version
 						)})}});
 }
@@ -195,19 +195,15 @@ function InjectCSS(extUrl,v) {
 async function InjectCode(loadBeta, extUrl, v) {
 	try {
 		// set some global variables
-		let script = document.createElement('script');
-		script.innerText = `
-			const extID='${chrome.runtime.id}',
-				extUrl='${extUrl}',
-				GuiLng='${lng}',
-				extVersion='${v}',
-				isRelease=false,
-				devMode=${!('update_url' in chrome.runtime.getManifest())},
-				loadBeta=${loadBeta};
-		`;
-		(document.head || document.documentElement).appendChild(script);
-		// The script was (supposedly) executed directly and can be removed again.
-		script.remove();
+		localStorage.setItem("HelperBaseData", JSON.stringify({
+			extID: chrome.runtime.id,
+			extUrl: extUrl,
+			GuiLng: lng,
+			extVersion: v,
+			isRelease: true,
+			devMode: `${!('update_url' in chrome.runtime.getManifest())}`,
+			loadBeta: loadBeta
+		}));
 
 		await proxyLoaded;
 		tid = setInterval(InjectCSS(extUrl,v), 0);
